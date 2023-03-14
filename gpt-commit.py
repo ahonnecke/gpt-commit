@@ -9,8 +9,9 @@ import sys
 import openai
 
 DIFF_PROMPT = "Generate a succinct summary of the following code changes:"
+COMMIT_MSG_CHAR_LIMIT = 100
 COMMIT_MSG_PROMPT = (
-    "Using no more than 50 characters, "
+    f"Using no more than {COMMIT_MSG_CHAR_LIMIT} characters, "
     "generate a descriptive commit message from these summaries:"
 )
 PROMPT_CUTOFF = 10000
