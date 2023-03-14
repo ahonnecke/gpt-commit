@@ -116,7 +116,7 @@ def parse_args():
         "-p",
         "--print-message",
         action="store_true",
-        default=False,
+        default=True,
         help="Print message in place of performing commit",
     )
 
