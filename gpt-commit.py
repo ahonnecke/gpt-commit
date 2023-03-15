@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 import openai
+import pyperclip
 
 DIFF_PROMPT = "Generate a succinct summary of the following code changes:"
 COMMIT_MSG_CHAR_LIMIT = 100
@@ -16,8 +17,7 @@ COMMIT_MSG_PROMPT = (
 )
 PROMPT_CUTOFF = 10000
 openai.organization = os.getenv("OPENAI_ORG_ID")
-openai.api_key = os.environ["OPENAI_API_KEY"]
-
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def get_diff():
     arguments = [
@@ -117,8 +117,24 @@ def parse_args():
         "-p",
         "--print-message",
         action="store_true",
-        default=True,
+        default=False,
         help="Print message in place of performing commit",
+    )
+
+    parser.add_argument(
+        "-c",
+        "--copy-to-clipboard",
+        action="store_true",
+        default=True,
+        help="Copy message to clipboard.",
+    )
+
+    cwd = os.getcwd()
+    parser.add_argument(
+        "-r",
+        "--repo-location",
+        default=cwd,
+        help="Root of the repo where the commit is staged.",
     )
 
     return parser.parse_args()
@@ -127,8 +143,15 @@ def parse_args():
 async def main():
     args = parse_args()
 
+    if os.path.isdir(args.repo_location):
+        os.chdir(args.repo_location)
+
     try:
         diff = get_diff()
+
+        if not diff:
+            raise RuntimeError("No diff found, did you stage your changes?")
+
         commit_message = await generate_commit_message(diff)
     except UnicodeDecodeError:
         print("gpt-commit does not support binary files", file=sys.stderr)
@@ -139,6 +162,8 @@ async def main():
 
     if args.print_message:
         print(commit_message)
+    elif args.copy_to_clipboard:
+        pyperclip.copy(commit_message)
     else:
         exit(commit(commit_message))
 
